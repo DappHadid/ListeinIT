@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "960673916250",
+    "project_id": "listenit-42016",
+    "storage_bucket": "listenit-42016.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:960673916250:android:4601ba9a77f76eda4a7f63",
+        "android_client_info": {
+          "package_name": "com.example.listenit"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBuAUPTLo3SmDcc-TD3pH6mADjdSQlaWeg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
