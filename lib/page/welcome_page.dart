@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:listenit/page/register_page.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:listenit/utils/rounded_button.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'dashboard_admin.dart';
+import 'dashboard_user.dart';
 
 const kTextFieldDecoration = InputDecoration(
   hintText: 'Enter a value',
@@ -30,19 +33,47 @@ class WelcomeScreen extends StatefulWidget {
   _WelcomeScreenState createState() => _WelcomeScreenState();
 }
 
-final _auth = FirebaseAuth.instance;
-
 class _WelcomeScreenState extends State<WelcomeScreen> {
+  final _auth = FirebaseAuth.instance;
+  final _firestore = FirebaseFirestore.instance;
   late String email;
   late String password;
   bool _isLoading = false;
+
+  Future<void> _navigateBasedOnRole(String email) async {
+    try {
+      final userQuery = await _firestore
+          .collection('users')
+          .where('email', isEqualTo: email)
+          .get();
+      if (userQuery.docs.isNotEmpty) {
+        final userDoc = userQuery.docs.first; // Ambil dokumen pertama
+        final role = userDoc['role'];
+        if (role == 'admin') {
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (context) => DashboardAdmin()));
+        } else if (role == 'user') {
+          Navigator.pushReplacement(context,
+              MaterialPageRoute(builder: (context) => DashboardUser()));
+        } else {
+          throw 'Unknown role';
+        }
+      } else {
+        throw 'User  document not found';
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+      });
+      print('Error determining role: $e');
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Stack(
         children: [
-          // Warna latar dengan gradient
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -83,7 +114,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
-                      // Gambar logo
                       Container(
                         height: 150,
                         child: Image.asset(
@@ -99,7 +129,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                             fontWeight: FontWeight.bold,
                             color: Colors.white),
                       ),
-                      // Input Email
                       Container(
                         margin: const EdgeInsets.symmetric(vertical: 10),
                         child: TextField(
@@ -120,7 +149,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           ),
                         ),
                       ),
-                      // Input Password
                       Container(
                         margin: const EdgeInsets.symmetric(vertical: 10),
                         child: TextField(
@@ -142,7 +170,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                         ),
                       ),
                       const SizedBox(height: 24.0),
-                      // Tombol Login
                       RoundedButton(
                         colour: Colors.green,
                         title: 'Login',
@@ -154,12 +181,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                             final UserCredential =
                                 await _auth.signInWithEmailAndPassword(
                                     email: email, password: password);
-                            final user = UserCredential.user;
-                            if (user != null) {
-                              setState(() {
-                                _isLoading = false;
-                              });
-                              Navigator.pushNamed(context, 'login_screen');
+                            if (UserCredential.user != null) {
+                              await _navigateBasedOnRole(email);
                             }
                           } catch (e) {
                             print(e);
@@ -169,7 +192,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           }
                         },
                       ),
-                      // Loading animation
                       _isLoading
                           ? Center(
                               child: LoadingAnimationWidget.inkDrop(
@@ -189,7 +211,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           );
                         },
                         child: const Text(
-                          'Don`t have an account? Register here',
+                          'Don’t have an account? Register here',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 14.0,

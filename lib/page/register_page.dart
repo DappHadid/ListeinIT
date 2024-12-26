@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // Tambahkan Firestore
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:listenit/page/welcome_page.dart';
-import 'package:listenit/utils/rounded_button.dart';
+import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:art_sweetalert/art_sweetalert.dart';
+import 'package:listenit/utils/rounded_button.dart';
+import 'package:listenit/page/welcome_page.dart';
 
 const kTextFieldDecoration = InputDecoration(
   hintText: 'Enter a value',
@@ -32,8 +33,10 @@ class RegistrationScreen extends StatefulWidget {
 
 class _RegistrationScreenState extends State<RegistrationScreen> {
   final _auth = FirebaseAuth.instance;
+  final _firestore = FirebaseFirestore.instance; // Tambahkan Firestore instance
   String email = '';
   String password = '';
+  String role = 'user'; // Default role adalah user
 
   @override
   Widget build(BuildContext context) {
@@ -93,9 +96,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       Text(
                         'Hey, Register Here...',
                         style: GoogleFonts.openSans(
-                            fontSize: 20.0,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white),
+                          fontSize: 20.0,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                       // Email input field
                       Container(
@@ -140,7 +144,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         title: 'Register',
                         onPressed: () async {
                           if (email.isEmpty || password.isEmpty) {
-                            // Tampilkan dialog jika email atau password kosong.
                             ArtSweetAlert.show(
                               context: context,
                               artDialogArgs: ArtDialogArgs(
@@ -161,7 +164,16 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                             );
 
                             if (userCredential.user != null) {
-                              //Registrasi berhasil
+                              // Simpan data ke Firestore
+                              await _firestore
+                                  .collection('users')
+                                  .doc(userCredential.user!.uid)
+                                  .set({
+                                'email': email,
+                                'role': role,
+                              });
+
+                              // Registrasi berhasil
                               ArtSweetAlert.show(
                                 context: context,
                                 artDialogArgs: ArtDialogArgs(
@@ -171,8 +183,12 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                       "Your account has been created successfully!",
                                 ),
                               ).then((_) {
-                                //Nav ke layar home screen
-                                Navigator.pushNamed(context, 'welcome_screen');
+                                // Navigasi berdasarkan role
+                                if (role == 'admin') {
+                                  Navigator.pushNamed(context, 'admin_screen');
+                                } else {
+                                  Navigator.pushNamed(context, 'user_screen');
+                                }
                               });
                             }
                           } catch (e) {
@@ -182,7 +198,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                               artDialogArgs: ArtDialogArgs(
                                 type: ArtSweetAlertType.warning,
                                 title: "Registration Failed",
-                                text: 'The email address is badly formatted.',
+                                text: e.toString(),
                               ),
                             );
                           }
@@ -195,7 +211,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                           Navigator.pushReplacement(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => WelcomeScreen()),
+                              builder: (context) => WelcomeScreen(),
+                            ),
                           );
                         },
                         child: const Text(
