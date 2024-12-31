@@ -1,3 +1,4 @@
+import 'package:art_sweetalert/art_sweetalert.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -182,7 +183,19 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                 await _auth.signInWithEmailAndPassword(
                                     email: email, password: password);
                             if (UserCredential.user != null) {
-                              await _navigateBasedOnRole(email);
+                              if (UserCredential.user!.emailVerified) {
+                                await _navigateBasedOnRole(email);
+                              } else {
+                                ArtSweetAlert.show(
+                                  context: context,
+                                  artDialogArgs: ArtDialogArgs(
+                                    type: ArtSweetAlertType.warning,
+                                    title: "Login Failed",
+                                    text:
+                                        ("Please verify your email before logging in."),
+                                  ),
+                                );
+                              }
                             }
                           } catch (e) {
                             print(e);

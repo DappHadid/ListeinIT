@@ -164,6 +164,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                             );
 
                             if (userCredential.user != null) {
+                              //mengirim email authentikasi
+                              await userCredential.user!
+                                  .sendEmailVerification();
                               // Simpan data ke Firestore
                               await _firestore
                                   .collection('users')
@@ -180,15 +183,15 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                   type: ArtSweetAlertType.success,
                                   title: "Registration Successful",
                                   text:
-                                      "Your account has been created successfully!",
+                                      "Your account has been created successfully! Please verify your email before login.",
                                 ),
                               ).then((_) {
-                                // Navigasi berdasarkan role
-                                if (role == 'admin') {
-                                  Navigator.pushNamed(context, 'admin_screen');
-                                } else {
-                                  Navigator.pushNamed(context, 'user_screen');
-                                }
+                                //Setelah berhasil , lanjut ke halaman login
+                                Navigator.pushReplacement(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (context) => WelcomeScreen()),
+                                );
                               });
                             }
                           } catch (e) {
