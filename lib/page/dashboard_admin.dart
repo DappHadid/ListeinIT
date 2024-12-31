@@ -87,7 +87,7 @@ class _DashboardAdminState extends State<DashboardAdmin> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          'Admin Dashboard nih',
+          'Admin Dashboard nih yakali ga dengerin',
           style: GoogleFonts.openSans(
             fontSize: 24.0,
             fontWeight: FontWeight.bold,
