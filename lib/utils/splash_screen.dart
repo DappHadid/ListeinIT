@@ -9,7 +9,7 @@ class AppSplashScreen extends StatelessWidget {
       childWidget: SizedBox(
         height: 200,
         width: 200,
-        child: Image.asset("assets/LOGO.png"),
+        child: Image.asset("assets/img/Listen_IT.png"),
       ),
       onAnimationEnd: () {
         Navigator.pushReplacementNamed(context, 'welcome_screen');

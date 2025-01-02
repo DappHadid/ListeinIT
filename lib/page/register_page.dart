@@ -33,10 +33,12 @@ class RegistrationScreen extends StatefulWidget {
 
 class _RegistrationScreenState extends State<RegistrationScreen> {
   final _auth = FirebaseAuth.instance;
-  final _firestore = FirebaseFirestore.instance; // Tambahkan Firestore instance
+  final _firestore = FirebaseFirestore.instance;
   String email = '';
   String password = '';
-  String role = 'user'; // Default role adalah user
+  String username = '';
+  String role = 'user';
+  bool _isPasswordVisible = false;
 
   @override
   Widget build(BuildContext context) {
@@ -86,9 +88,10 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     children: <Widget>[
                       // Logo image
                       Container(
-                        height: 150,
+                        height: 250,
+                        width: 250,
                         child: Image.asset(
-                          'assets/Logos.png',
+                          'assets/img/Listen_IT.png',
                           fit: BoxFit.contain,
                         ),
                       ),
@@ -101,6 +104,23 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                           color: Colors.white,
                         ),
                       ),
+                      // Username input field
+                      Container(
+                        margin: const EdgeInsets.symmetric(vertical: 10),
+                        child: TextField(
+                          onChanged: (value) {
+                            username = value;
+                          },
+                          style: const TextStyle(color: Colors.white),
+                          decoration: kTextFieldDecoration.copyWith(
+                            hintText: "What's your name?",
+                            prefixIcon: const Icon(
+                              FontAwesomeIcons.userAlt,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
                       // Email input field
                       Container(
                         margin: const EdgeInsets.symmetric(vertical: 10),
@@ -111,9 +131,9 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                           },
                           style: const TextStyle(color: Colors.white),
                           decoration: kTextFieldDecoration.copyWith(
-                            hintText: 'Enter your Email',
+                            hintText: "What's your email?",
                             prefixIcon: const Icon(
-                              FontAwesomeIcons.user,
+                              FontAwesomeIcons.envelope,
                               color: Colors.white,
                             ),
                           ),
@@ -123,16 +143,29 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                       Container(
                         margin: const EdgeInsets.symmetric(vertical: 10),
                         child: TextField(
-                          obscureText: true,
+                          obscureText: !_isPasswordVisible,
                           onChanged: (value) {
                             password = value;
                           },
                           style: const TextStyle(color: Colors.white),
                           decoration: kTextFieldDecoration.copyWith(
-                            hintText: 'Enter your Password',
+                            hintText: 'Create your Password',
                             prefixIcon: const Icon(
                               FontAwesomeIcons.lock,
                               color: Colors.white,
+                            ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _isPasswordVisible
+                                    ? FontAwesomeIcons.eye
+                                    : FontAwesomeIcons.eyeSlash,
+                                color: Colors.white,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _isPasswordVisible = !_isPasswordVisible;
+                                });
+                              },
                             ),
                           ),
                         ),
@@ -143,13 +176,16 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         colour: Colors.green,
                         title: 'Register',
                         onPressed: () async {
-                          if (email.isEmpty || password.isEmpty) {
+                          if (username.isEmpty ||
+                              email.isEmpty ||
+                              password.isEmpty) {
                             ArtSweetAlert.show(
                               context: context,
                               artDialogArgs: ArtDialogArgs(
                                 type: ArtSweetAlertType.danger,
                                 title: "Error",
-                                text: "Email and Password cannot be empty!",
+                                text:
+                                    "Username, Email, and Password cannot be empty!",
                               ),
                             );
                             return;
@@ -164,7 +200,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                             );
 
                             if (userCredential.user != null) {
-                              //mengirim email authentikasi
+                              //mengirim email autentikasi
                               await userCredential.user!
                                   .sendEmailVerification();
                               // Simpan data ke Firestore
@@ -172,6 +208,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                   .collection('users')
                                   .doc(userCredential.user!.uid)
                                   .set({
+                                'username': username, // Tambahkan username
                                 'email': email,
                                 'role': role,
                               });
@@ -186,7 +223,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                       "Your account has been created successfully! Please verify your email before login.",
                                 ),
                               ).then((_) {
-                                //Setelah berhasil , lanjut ke halaman login
+                                //Setelah berhasil, lanjut ke halaman login
                                 Navigator.pushReplacement(
                                   context,
                                   MaterialPageRoute(
