@@ -1,4 +1,3 @@
-import 'package:art_sweetalert/art_sweetalert.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -6,7 +5,9 @@ import 'package:listenit/page/register_page.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:listenit/utils/rounded_button.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:art_sweetalert/art_sweetalert.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+// import 'package:flutter_svg/flutter_svg.dart';
 import 'dashboard_admin.dart';
 import 'dashboard_user.dart';
 
@@ -40,33 +41,41 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   late String email;
   late String password;
   bool _isLoading = false;
+  bool _isPasswordVisible = false;
 
-  Future<void> _navigateBasedOnRole(String email) async {
+  Future<void> _navigateBasedOnRole(String uid) async {
     try {
-      final userQuery = await _firestore
-          .collection('users')
-          .where('email', isEqualTo: email)
-          .get();
-      if (userQuery.docs.isNotEmpty) {
-        final userDoc = userQuery.docs.first; // Ambil dokumen pertama
+      final userDoc = await _firestore.collection('users').doc(uid).get();
+      if (userDoc.exists) {
         final role = userDoc['role'];
         if (role == 'admin') {
-          Navigator.pushReplacement(context,
-              MaterialPageRoute(builder: (context) => DashboardAdmin()));
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => DashboardAdmin()),
+          );
         } else if (role == 'user') {
-          Navigator.pushReplacement(context,
-              MaterialPageRoute(builder: (context) => DashboardUser()));
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => DashboardUser()),
+          );
         } else {
           throw 'Unknown role';
         }
       } else {
-        throw 'User  document not found';
+        throw 'User document not found';
       }
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
-      print('Error determining role: $e');
+      ArtSweetAlert.show(
+        context: context,
+        artDialogArgs: ArtDialogArgs(
+          type: ArtSweetAlertType.warning,
+          title: "Error",
+          text: e.toString(),
+        ),
+      );
     }
   }
 
@@ -115,10 +124,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
-                      Container(
-                        height: 150,
+                      SizedBox(
+                        height: 300,
+                        width: 300,
                         child: Image.asset(
-                          'assets/LOGO.png',
+                          'assets/img/Listen_IT.png',
                           fit: BoxFit.contain,
                         ),
                       ),
@@ -126,9 +136,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       Text(
                         'Log In to ListenIT',
                         style: GoogleFonts.openSans(
-                            fontSize: 20.0,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white),
+                          fontSize: 20.0,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
                       ),
                       Container(
                         margin: const EdgeInsets.symmetric(vertical: 10),
@@ -153,7 +164,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       Container(
                         margin: const EdgeInsets.symmetric(vertical: 10),
                         child: TextField(
-                          obscureText: true,
+                          obscureText: !_isPasswordVisible,
                           onChanged: (value) {
                             password = value;
                           },
@@ -167,14 +178,39 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                               FontAwesomeIcons.lock,
                               color: Colors.white,
                             ),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _isPasswordVisible
+                                    ? FontAwesomeIcons.eye
+                                    : FontAwesomeIcons.eyeSlash,
+                                color: Colors.white,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _isPasswordVisible = !_isPasswordVisible;
+                                });
+                              },
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(height: 24.0),
                       RoundedButton(
-                        colour: Colors.green,
+                        colour: Color(0xFF4CAF50),
                         title: 'Login',
                         onPressed: () async {
+                          if (email.isEmpty || password.isEmpty) {
+                            ArtSweetAlert.show(
+                              context: context,
+                              artDialogArgs: ArtDialogArgs(
+                                type: ArtSweetAlertType.warning,
+                                title: "Login Failed",
+                                text: "Email and password must not be empty.",
+                              ),
+                            );
+                            return;
+                          }
+
                           setState(() {
                             _isLoading = true;
                           });
@@ -184,7 +220,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                     email: email, password: password);
                             if (UserCredential.user != null) {
                               if (UserCredential.user!.emailVerified) {
-                                await _navigateBasedOnRole(email);
+                                await _navigateBasedOnRole(
+                                    UserCredential.user!.uid);
                               } else {
                                 ArtSweetAlert.show(
                                   context: context,
@@ -192,16 +229,23 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                                     type: ArtSweetAlertType.warning,
                                     title: "Login Failed",
                                     text:
-                                        ("Please verify your email before logging in."),
+                                        "Please verify your email before logging in.",
                                   ),
                                 );
                               }
                             }
                           } catch (e) {
-                            print(e);
                             setState(() {
                               _isLoading = false;
                             });
+                            ArtSweetAlert.show(
+                              context: context,
+                              artDialogArgs: ArtDialogArgs(
+                                type: ArtSweetAlertType.warning,
+                                title: "Login Failed",
+                                text: e.toString(),
+                              ),
+                            );
                           }
                         },
                       ),

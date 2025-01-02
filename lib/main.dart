@@ -4,6 +4,8 @@ import 'firebase_options.dart';
 import 'package:listenit/page/welcome_page.dart';
 import 'package:listenit/page/register_page.dart';
 import 'package:listenit/utils/splash_screen.dart';
+import 'package:device_preview_plus/device_preview_plus.dart';
+import 'package:flutter/foundation.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,16 +14,25 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(MyApp());
+
+  runApp(
+    DevicePreview(
+      enabled: !kReleaseMode, // Aktifkan Device Preview hanya di mode debug
+      builder: (context) => MyApp(), // Bungkus aplikasi Anda
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      useInheritedMediaQuery: true, // Menggunakan inherited media query
+      locale:
+          DevicePreview.locale(context), // Mengatur locale dari Device Preview
+      builder:
+          DevicePreview.appBuilder, // Menggunakan builder dari Device Preview
       debugShowCheckedModeBanner: false,
-      // theme: ThemeData.light(),
-      // darkTheme: ThemeData.dark(),
       initialRoute: '/',
       routes: {
         '/': (context) => AppSplashScreen(),
